@@ -83,8 +83,11 @@ class TokenImpl<T> implements Token<T> {
     }
 }
 
+type LexerState<T> = [boolean, RegExp, T, LexerState<T> | "pop"][];
+type TopLevelLexerRule<T> = [boolean, RegExp, T, LexerState<T>?];
+
 class LexerImpl<T> implements Lexer<T> {
-    constructor(public rules: [boolean, RegExp, T][]) {
+    constructor(public rules: TopLevelLexerRule<T>[]) {
         for (const rule of this.rules) {
             if (rule[1].source[0] !== '^') {
                 throw new Error(`Regular expression patterns for a tokenizer should start with "^": ${rule[1].source}`);
@@ -155,6 +158,6 @@ class LexerImpl<T> implements Lexer<T> {
     }
 }
 
-export function buildLexer<T>(rules: [boolean, RegExp, T][]): Lexer<T> {
+export function buildLexer<T>(rules: TopLevelLexerRule<T>[]): Lexer<T> {
     return new LexerImpl<T>(rules);
 }
