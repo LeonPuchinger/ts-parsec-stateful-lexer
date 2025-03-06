@@ -83,18 +83,18 @@ class TokenImpl<T> implements Token<T> {
     }
 }
 
-type LexerState<T> = [boolean, RegExp, T, (LexerState<T> | "pop")?][];
+type LexerState<T> = [boolean, RegExp, T, (LexerState<T> | 'pop')?][];
 type TopLevelLexerRule<T> = [boolean, RegExp, T, LexerState<T>?];
 
-function analyzeLexerRules<T>(rules: LexerState<T>) {
-    for (const [_keep, regex, _kind, state] of rules) {
-        if (regex.source[0] !== "^") {
-            throw new Error(`Regular expression patterns for a tokenizer should start with "^": ${regex.source}`);
+function analyzeLexerRules<T>(rules: LexerState<T>): void {
+    for (const [, regex, , state] of rules) {
+        if (regex.source[0] !== '^') {
+            throw new Error(`Regular expression patterns for a tokenizer should start with '^': ${regex.source}`);
         }
         if (!regex.global) {
             throw new Error(`Regular expression patterns for a tokenizer should be global: ${regex.source}`);
         }
-        if (state !== undefined && state !== "pop") {
+        if (state !== undefined && state !== 'pop') {
             analyzeLexerRules(state);
         }
     }
@@ -105,7 +105,7 @@ class LexerImpl<T> implements Lexer<T> {
 
     constructor(public rules: TopLevelLexerRule<T>[]) {
         // Casting `rules` to `LexerState<T>` is safe because `LexerState<T>` is a superset of `TopLevelLexerRule<T>`
-        analyzeLexerRules<T>(rules as LexerState<T>);
+        analyzeLexerRules(rules);
     }
 
     public parse(input: string): TokenImpl<T> | undefined {
@@ -120,7 +120,7 @@ class LexerImpl<T> implements Lexer<T> {
         const subString = input.substr(indexStart);
         let result: TokenImpl<T> | undefined;
         const currentRuleset = this.states[this.states.length - 1];
-        let nextState: LexerState<T> | "pop" | undefined = undefined;
+        let nextState: LexerState<T> | 'pop' | undefined;
         for (const [keep, regexp, kind, next] of currentRuleset) {
             regexp.lastIndex = 0;
             if (regexp.test(subString)) {
@@ -149,7 +149,7 @@ class LexerImpl<T> implements Lexer<T> {
                 `Unable to tokenize the rest of the input: ${input.substr(indexStart)}`
             );
         } else {
-            if (nextState === "pop") {
+            if (nextState === 'pop') {
                 this.states.pop();
             } else if (nextState !== undefined) {
                 this.states.push(nextState);
