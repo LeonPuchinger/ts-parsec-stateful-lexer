@@ -83,19 +83,27 @@ class TokenImpl<T> implements Token<T> {
     }
 }
 
-type LexerState<T> = [boolean, RegExp, T, LexerState<T> | "pop"][];
+type LexerState<T> = [boolean, RegExp, T, (LexerState<T> | "pop")?][];
 type TopLevelLexerRule<T> = [boolean, RegExp, T, LexerState<T>?];
+
+function analyzeLexerRules<T>(rules: LexerState<T>) {
+    for (const [_, regex, _, state] of rules) {
+        if (regex.source[0] !== "^") {
+            throw new Error(`Regular expression patterns for a tokenizer should start with "^": ${regex.source}`);
+        }
+        if (!regex.global) {
+            throw new Error(`Regular expression patterns for a tokenizer should be global: ${regex.source}`);
+        }
+        if (state !== undefined && state !== "pop") {
+            analyzeLexerRules(state);
+        }
+    }
+}
 
 class LexerImpl<T> implements Lexer<T> {
     constructor(public rules: TopLevelLexerRule<T>[]) {
-        for (const rule of this.rules) {
-            if (rule[1].source[0] !== '^') {
-                throw new Error(`Regular expression patterns for a tokenizer should start with "^": ${rule[1].source}`);
-            }
-            if (!rule[1].global) {
-                throw new Error(`Regular expression patterns for a tokenizer should be global: ${rule[1].source}`);
-            }
-        }
+        // Casting `rules` to `LexerState<T>` is safe because `LexerState<T>` is a superset of `TopLevelLexerRule<T>`
+        analyzeLexerRules<T>(rules as LexerState<T>);
     }
 
     public parse(input: string): TokenImpl<T> | undefined {
