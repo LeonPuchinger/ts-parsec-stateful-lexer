@@ -176,6 +176,10 @@ class LexerImpl<T> implements Lexer<T> {
     }
 }
 
+export function buildLexerState<T>(rules: LexerState<T>): LexerState<T> {
+    return rules;
+}
+
 export function buildLexer<T>(rules: TopLevelLexerRule<T>[]): Lexer<T> {
     return new LexerImpl<T>(rules);
 }
