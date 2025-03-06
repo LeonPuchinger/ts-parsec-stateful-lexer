@@ -87,7 +87,7 @@ type LexerState<T> = [boolean, RegExp, T, (LexerState<T> | "pop")?][];
 type TopLevelLexerRule<T> = [boolean, RegExp, T, LexerState<T>?];
 
 function analyzeLexerRules<T>(rules: LexerState<T>) {
-    for (const [_, regex, _, state] of rules) {
+    for (const [_keep, regex, _kind, state] of rules) {
         if (regex.source[0] !== "^") {
             throw new Error(`Regular expression patterns for a tokenizer should start with "^": ${regex.source}`);
         }
