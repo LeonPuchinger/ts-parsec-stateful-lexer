@@ -101,6 +101,8 @@ function analyzeLexerRules<T>(rules: LexerState<T>) {
 }
 
 class LexerImpl<T> implements Lexer<T> {
+    private states: LexerState<T>[] = [this.rules];
+
     constructor(public rules: TopLevelLexerRule<T>[]) {
         // Casting `rules` to `LexerState<T>` is safe because `LexerState<T>` is a superset of `TopLevelLexerRule<T>`
         analyzeLexerRules<T>(rules as LexerState<T>);
@@ -117,7 +119,9 @@ class LexerImpl<T> implements Lexer<T> {
 
         const subString = input.substr(indexStart);
         let result: TokenImpl<T> | undefined;
-        for (const [keep, regexp, kind] of this.rules) {
+        const currentRuleset = this.states[this.states.length - 1];
+        let nextState: LexerState<T> | "pop" | undefined = undefined;
+        for (const [keep, regexp, kind, next] of currentRuleset) {
             regexp.lastIndex = 0;
             if (regexp.test(subString)) {
                 const text = subString.substr(0, regexp.lastIndex);
@@ -134,6 +138,7 @@ class LexerImpl<T> implements Lexer<T> {
                 const newResult = new TokenImpl<T>(this, input, kind, text, { index: indexStart, rowBegin, columnBegin, rowEnd, columnEnd }, keep);
                 if (result === undefined || result.text.length < newResult.text.length) {
                     result = newResult;
+                    nextState = next;
                 }
             }
         }
@@ -144,6 +149,11 @@ class LexerImpl<T> implements Lexer<T> {
                 `Unable to tokenize the rest of the input: ${input.substr(indexStart)}`
             );
         } else {
+            if (nextState === "pop") {
+                this.states.pop();
+            } else if (nextState !== undefined) {
+                this.states.push(nextState);
+            }
             return result;
         }
     }
