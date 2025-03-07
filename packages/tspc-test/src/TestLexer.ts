@@ -4,7 +4,7 @@
 // tslint:disable:trailing-comma
 
 import * as assert from 'assert';
-import { buildLexer } from 'typescript-parsec';
+import { buildLexer, LexerState } from 'typescript-parsec';
 
 function notUndefined<T>(t: T | undefined): T {
     assert.notStrictEqual(t, undefined);
@@ -145,10 +145,10 @@ test(`Lexer: C-style block comments via lexer states`, () => {
         Space,
     }
 
-    const BlockComment = buildLexerState([
+    const BlockComment: LexerState<TokenKind> = [
         [false, /^\*\//g, TokenKind.CommentEnd, 'pop'],
         [true, /^[^*]+/g, TokenKind.CommentContents],
-    ]);
+    ];
 
     const lexer = buildLexer([
         [false, /^\/\*/g, TokenKind.CommentBegin, BlockComment],

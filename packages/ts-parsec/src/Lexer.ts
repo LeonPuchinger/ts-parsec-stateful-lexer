@@ -83,10 +83,10 @@ class TokenImpl<T> implements Token<T> {
     }
 }
 
-type LexerState<T> = [boolean, RegExp, T, (LexerState<T> | 'pop')?][];
-type TopLevelLexerRule<T> = [boolean, RegExp, T, LexerState<T>?];
+export type LexerRule<T> = [boolean, RegExp, T, (LexerRule<T>[] | 'pop')?];
+export type LexerState<T> = LexerRule<T>[];
 
-function analyzeLexerRules<T>(rules: LexerState<T>): void {
+function analyzeLexerRules<T>(rules: LexerState<T>, topLevel: boolean): void {
     for (const [, regex, , state] of rules) {
         if (regex.source[0] !== '^') {
             throw new Error(`Regular expression patterns for a tokenizer should start with '^': ${regex.source}`);
@@ -94,8 +94,14 @@ function analyzeLexerRules<T>(rules: LexerState<T>): void {
         if (!regex.global) {
             throw new Error(`Regular expression patterns for a tokenizer should be global: ${regex.source}`);
         }
-        if (state !== undefined && state !== 'pop') {
-            analyzeLexerRules(state);
+        if (state !== undefined) {
+            if (state === 'pop') {
+                if (topLevel) {
+                    throw new Error(`The 'pop' directive is not allowed in the top-level lexer state`);
+                }
+            } else {
+                analyzeLexerRules(state, false);
+            }
         }
     }
 }
@@ -103,9 +109,8 @@ function analyzeLexerRules<T>(rules: LexerState<T>): void {
 class LexerImpl<T> implements Lexer<T> {
     private states: LexerState<T>[] = [this.rules];
 
-    constructor(public rules: TopLevelLexerRule<T>[]) {
-        // Casting `rules` to `LexerState<T>` is safe because `LexerState<T>` is a superset of `TopLevelLexerRule<T>`
-        analyzeLexerRules(rules);
+    constructor(public rules: LexerState<T>) {
+        analyzeLexerRules(rules, true);
     }
 
     public parse(input: string): TokenImpl<T> | undefined {
@@ -176,10 +181,6 @@ class LexerImpl<T> implements Lexer<T> {
     }
 }
 
-export function buildLexerState<T>(rules: LexerState<T>): LexerState<T> {
-    return rules;
-}
-
-export function buildLexer<T>(rules: TopLevelLexerRule<T>[]): Lexer<T> {
+export function buildLexer<T>(rules: LexerState<T>): Lexer<T> {
     return new LexerImpl<T>(rules);
 }
