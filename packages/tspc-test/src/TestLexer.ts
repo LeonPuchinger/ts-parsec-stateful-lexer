@@ -134,7 +134,7 @@ test(`Lexer: identifiers and numbers with discardable commas and spaces`, () => 
     assert.strictEqual(token, undefined);
 });
 
-test(`Lexer: C-style block comments via lexer states`, () => {
+test(`Lexer: C-style nested block comments via lexer states`, () => {
     enum TokenKind {
         CommentBegin,
         CommentEnd,
@@ -146,8 +146,9 @@ test(`Lexer: C-style block comments via lexer states`, () => {
     }
 
     const BlockComment: LexerState<TokenKind> = [
+        [false, /^\/\*/g, TokenKind.CommentBegin, 'push'], // nested comment
         [false, /^\*\//g, TokenKind.CommentEnd, 'pop'],
-        [true, /^[^*]+/g, TokenKind.CommentContents],
+        [true, /^(?:(?!\/\*|\*\/).)+/g, TokenKind.CommentContents],
     ];
 
     const lexer = buildLexer([
@@ -155,10 +156,10 @@ test(`Lexer: C-style block comments via lexer states`, () => {
         [true, /^\d+/g, TokenKind.Number],
         [true, /^[a-zA-Z]\w*/g, TokenKind.Identifier],
         [false, /^,/g, TokenKind.Comma],
-        [false, /^\s+/g, TokenKind.Space]
+        [false, /^\s+/g, TokenKind.Space],
     ]);
 
-    let token = lexer.parse(`123 /* abc */ def`);
+    let token = lexer.parse(`123 /* abc /*456*/*/ def`);
 
     token = notUndefined(token);
     assert.strictEqual(token.kind, TokenKind.Number);
@@ -168,6 +169,11 @@ test(`Lexer: C-style block comments via lexer states`, () => {
     token = notUndefined(token);
     assert.strictEqual(token.kind, TokenKind.CommentContents);
     assert.strictEqual(token.text, ' abc ');
+    token = token.next;
+
+    token = notUndefined(token);
+    assert.strictEqual(token.kind, TokenKind.CommentContents);
+    assert.strictEqual(token.text, '456');
     token = token.next;
 
     token = notUndefined(token);
