@@ -145,14 +145,14 @@ test(`Lexer: C-style nested block comments via lexer states`, () => {
         Space,
     }
 
-    const BlockComment: LexerState<TokenKind> = [
+    const blockComment: LexerState<TokenKind> = [
         [false, /^\/\*/g, TokenKind.CommentBegin, 'push'], // nested comment
         [false, /^\*\//g, TokenKind.CommentEnd, 'pop'],
         [true, /^(?:(?!\/\*|\*\/).)+/g, TokenKind.CommentContents],
     ];
 
     const lexer = buildLexer([
-        [false, /^\/\*/g, TokenKind.CommentBegin, BlockComment],
+        [false, /^\/\*/g, TokenKind.CommentBegin, blockComment],
         [true, /^\d+/g, TokenKind.Number],
         [true, /^[a-zA-Z]\w*/g, TokenKind.Identifier],
         [false, /^,/g, TokenKind.Comma],

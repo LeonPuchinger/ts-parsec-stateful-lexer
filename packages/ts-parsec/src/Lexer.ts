@@ -156,7 +156,7 @@ class LexerImpl<T> implements Lexer<T> {
         } else {
             if (nextState === 'pop') {
                 this.states.pop();
-            } else if(nextState === 'push') {
+            } else if (nextState === 'push') {
                 this.states.push(currentRuleset);
             } else if (nextState !== undefined) {
                 this.states.push(nextState);
