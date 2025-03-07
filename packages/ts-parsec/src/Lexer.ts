@@ -83,7 +83,7 @@ class TokenImpl<T> implements Token<T> {
     }
 }
 
-export type LexerRule<T> = [boolean, RegExp, T, (LexerRule<T>[] | 'pop')?];
+export type LexerRule<T> = [boolean, RegExp, T, (LexerRule<T>[] | 'push' | 'pop')?];
 export type LexerState<T> = LexerRule<T>[];
 
 function analyzeLexerRules<T>(rules: LexerState<T>, topLevel: boolean): void {
@@ -95,9 +95,9 @@ function analyzeLexerRules<T>(rules: LexerState<T>, topLevel: boolean): void {
             throw new Error(`Regular expression patterns for a tokenizer should be global: ${regex.source}`);
         }
         if (state !== undefined) {
-            if (state === 'pop') {
+            if (state === 'pop' || state === 'push') {
                 if (topLevel) {
-                    throw new Error(`The 'pop' directive is not allowed in the top-level lexer state`);
+                    throw new Error(`The 'push' and 'pop' directives are not allowed in the top-level lexer state`);
                 }
             } else {
                 analyzeLexerRules(state, false);
@@ -125,7 +125,7 @@ class LexerImpl<T> implements Lexer<T> {
         const subString = input.substr(indexStart);
         let result: TokenImpl<T> | undefined;
         const currentRuleset = this.states[this.states.length - 1];
-        let nextState: LexerState<T> | 'pop' | undefined;
+        let nextState: LexerState<T> | 'push' | 'pop' | undefined;
         for (const [keep, regexp, kind, next] of currentRuleset) {
             regexp.lastIndex = 0;
             if (regexp.test(subString)) {
@@ -156,6 +156,8 @@ class LexerImpl<T> implements Lexer<T> {
         } else {
             if (nextState === 'pop') {
                 this.states.pop();
+            } else if(nextState === 'push') {
+                this.states.push(currentRuleset);
             } else if (nextState !== undefined) {
                 this.states.push(nextState);
             }
