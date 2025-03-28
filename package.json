@@ -1,24 +1,17 @@
 {
-  "name": "@microsoft/ts-parsec-repo",
-  "version": "0.1.0",
-  "private": true,
+  "name": "typescript-parsec",
+  "version": "0.4.0",
+  "description": "TypeScript Parser Combinator",
+  "private": false,
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "lerna run build --stream",
-    "test": "lerna run test --stream",
-    "change": "node ./node_modules/beachball/bin/beachball.js change"
+    "build": "tslint --project tsconfig.json & tsc"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:microsoft/ts-parsec.git"
+    "url": "git+https://github.com/LeonPuchinger/ts-parsec-stateful-lexer.git"
   },
   "license": "MIT",
-  "workspaces": {
-    "packages": [
-      "packages/*"
-    ]
-  },
-  "devDependencies": {
-    "beachball": "^1.11.5",
-    "lerna": "^3.16.1"
-  }
+  "homepage": "https://github.com/microsoft/ts-parsec#readme"
 }
