@@ -86,7 +86,12 @@ class TokenImpl<T> implements Token<T> {
 export type LexerRule<T> = [boolean, RegExp, T, (LexerRule<T>[] | 'push' | 'pop')?];
 export type LexerState<T> = LexerRule<T>[];
 
-function analyzeLexerRules<T>(rules: LexerState<T>, topLevel: boolean): void {
+function analyzeLexerRules<T>(
+    rules: LexerState<T>,
+    topLevel: boolean,
+    memo: Set<LexerState<T>> = new Set(),
+): void {
+    memo.add(rules);
     for (const [, regex, , state] of rules) {
         if (regex.source[0] !== '^') {
             throw new Error(`Regular expression patterns for a tokenizer should start with '^': ${regex.source}`);
@@ -100,7 +105,10 @@ function analyzeLexerRules<T>(rules: LexerState<T>, topLevel: boolean): void {
                     throw new Error(`The 'push' and 'pop' directives are not allowed in the top-level lexer state`);
                 }
             } else {
-                analyzeLexerRules(state, false);
+                if (memo.has(state)) {
+                    return;
+                }
+                analyzeLexerRules(state, false, memo);
             }
         }
     }
@@ -186,3 +194,18 @@ class LexerImpl<T> implements Lexer<T> {
 export function buildLexer<T>(rules: LexerState<T>): Lexer<T> {
     return new LexerImpl<T>(rules);
 }
+
+// TESTING
+
+const statements: LexerState<string> = [];
+const stringLiteral: LexerState<string> = [];
+
+statements.push(
+  [true, /^"/g, "stringDelimiter", stringLiteral],
+);
+
+stringLiteral.push(
+  [true, /^\${/g, "stringInterpolationDelimiter", statements],
+);
+
+buildLexer(statements);
