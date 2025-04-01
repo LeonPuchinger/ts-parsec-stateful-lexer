@@ -88,7 +88,6 @@ export type LexerState<T> = LexerRule<T>[];
 
 function analyzeLexerRules<T>(
     rules: LexerState<T>,
-    topLevel: boolean,
     memo: Set<LexerState<T>> = new Set(),
 ): void {
     memo.add(rules);
@@ -100,15 +99,11 @@ function analyzeLexerRules<T>(
             throw new Error(`Regular expression patterns for a tokenizer should be global: ${regex.source}`);
         }
         if (state !== undefined) {
-            if (state === 'pop' || state === 'push') {
-                if (topLevel) {
-                    throw new Error(`The 'push' and 'pop' directives are not allowed in the top-level lexer state`);
-                }
-            } else {
+            if (state !== 'pop' && state !== 'push') {
                 if (memo.has(state)) {
                     return;
                 }
-                analyzeLexerRules(state, false, memo);
+                analyzeLexerRules(state, memo);
             }
         }
     }
@@ -118,7 +113,7 @@ class LexerImpl<T> implements Lexer<T> {
     private states: LexerState<T>[] = [this.rules];
 
     constructor(public rules: LexerState<T>) {
-        analyzeLexerRules(rules, true);
+        analyzeLexerRules(rules);
     }
 
     public parse(input: string): TokenImpl<T> | undefined {
