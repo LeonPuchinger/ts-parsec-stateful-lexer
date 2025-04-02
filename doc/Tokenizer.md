@@ -91,7 +91,3 @@ const tokenizer = buildLexer([
     [false, /^\s+/g, TokenKind.Space],
 ]);
 ```
-
-Note: Using `'push'` or `'pop'` is not allowed in the top-level state. If you
-wish to switch states from there, you need to provide a concrete instance of the
-new state that should be pushed.
